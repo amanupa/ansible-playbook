@@ -1,0 +1,51 @@
+---
+
+- name: DBserver setup
+  hosts: dbservers
+  become: yes
+    # vars: 
+    #dbname: electric
+    #dbuser: current
+    #dbpass: tesla
+
+  tasks:
+    - debug: 
+        msg: "the dbname is: {{dbname}}" # by this we can print 
+
+    - debug: 
+        var: dbuser # also by this we can print the data
+
+    - name: install mariadb-server
+      ansible.builtin.yum:
+        name: mariadb-server
+        state: present
+
+    - name: install pymysql
+      ansible.builtin.yum:
+        name: python3-PyMySQL
+        state: present
+
+    - name: start service 
+      ansible.builtin.service:
+        name: mariadb
+        state: started
+        enabled: yes
+
+    - name: Create a new database 
+      community.mysql.mysql_db:
+        name: "{{dbname}}"
+        state: present
+        login_unix_socket: /var/lib/mysql/mysql.sock
+
+    - name: Create database user 
+      community.mysql.mysql_user:
+        name: "{{dbuser}}"
+        password: "{{dbpass}}"
+        priv: '*.*:ALL'
+        state: present
+        login_unix_socket: /var/lib/mysql/mysql.sock
+      register: dbout # we are creating variable dbout and storing the output of this playbook in it 
+    
+    - name: print dbout variable
+      debug:
+        msg: "this is the output of the playbook: {{dbout}}"    
